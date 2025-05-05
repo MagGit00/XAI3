@@ -50,9 +50,12 @@ pdp_2d <- partial(rf_sample_model,
 ```
 
 ```{r}
-pdp_plot <- ggplot(pdp_2d, aes(x = temp_denorm, y = hum_denorm)) +
+# 2D PDP plot with rug plots instead of marginal histograms
+pdp_plot_rug <- ggplot(pdp_2d, aes(x = temp_denorm, y = hum_denorm)) +
   geom_tile(aes(fill = yhat)) +
-  geom_point(data = df_sample, aes(x = temp_denorm, y = hum_denorm), alpha = 0) +
+  geom_point(data = df_sample, aes(x = temp_denorm, y = hum_denorm), alpha = 0) +  # for PDP compatibility
+  geom_rug(data = df_sample, aes(x = temp_denorm), sides = "t", alpha = 0.5, inherit.aes = FALSE) +  # top rug
+  geom_rug(data = df_sample, aes(y = hum_denorm), sides = "r", alpha = 0.5, inherit.aes = FALSE) +  # right rug
   scale_fill_gradient2(
     name = "ŷ",
     low = "#03142c",    
@@ -72,16 +75,6 @@ pdp_plot <- ggplot(pdp_2d, aes(x = temp_denorm, y = hum_denorm)) +
     axis.title = element_text(size = 11)
   )
 
-# Add marginal histograms styled like tick marks
-p_with_marginals <- ggMarginal(
-  pdp_plot,
-  type = "histogram",
-  margins = "both",
-  bins = 100,       # narrow bars for tick look
-  size = 2,         # thinner margins
-  fill = "black",
-  colour = "black"
-)
-
-print(p_with_marginals)
+# Print the final plot
+print(pdp_plot_rug)
 ```
