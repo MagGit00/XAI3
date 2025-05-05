@@ -1,0 +1,20 @@
+---
+title: "practica1"
+authors: "Maurice Wegerif & Magnus Stavland Jakobsen"
+date: "2025-05-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
