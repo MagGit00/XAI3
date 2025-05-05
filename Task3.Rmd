@@ -1,0 +1,106 @@
+---
+title: "Task3"
+authors: "Maurice Wegerif & Magnus Stavland Jakobsen"
+date: "2025-05-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Task 3 - PDP to explain the price of a house
+```{r}
+library(randomForest)
+library(pdp)
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+house_data <- read.csv("kc_house_data.csv")
+head(house_data)
+```
+
+```{r}
+# Random Forest approximation:
+# Select relevant features
+selected_data <- house_data %>%
+  select(price, bedrooms, bathrooms, sqft_living, sqft_lot, floors, yr_built)
+
+# Randomly sample 5000 rows to reduce computation
+set.seed(55)  # for reproducibility
+sampled_data <- selected_data %>% sample_n(5000)
+
+# Build Random Forest model
+rf_model <- randomForest(price ~ ., data = selected_data, ntree = 100, importance = TRUE)
+
+# View model summary
+print(rf_model)
+```
+
+```{r}
+predictors <- c("bedrooms", "bathrooms", "sqft_living", "sqft_lot", "floors", "yr_built")
+
+# Loop to generate all the PDP plots with rug plots
+for (var in predictors) {
+  pd <- partial(rf_model, pred.var = var, train = sampled_data, progress = "text")
+  
+  pd_plot <- ggplot(pd, aes_string(x = var, y = "yhat")) +
+    geom_line(size = 1) +
+    geom_rug(data = sampled_data, aes_string(x = var), sides = "b", alpha = 0.3, inherit.aes = FALSE) +
+    ggtitle(paste("Partial Dependence on", var)) +
+    xlab(var) +
+    ylab("Predicted Price") +
+    theme_minimal()
+  
+  print(pd_plot)
+}
+```
+```{r}
+library(ggplot2)
+library(pdp)
+
+# Generate 2D partial dependence data
+pdp_2d <- partial(rf_model,
+                  pred.var = c("bedrooms", "bathrooms"),
+                  train = sampled_data,
+                  grid.resolution = 20,
+                  progress = "text")
+
+# 2D PDP plot with rug plots instead of marginal histograms
+pdp_plot_rug <- ggplot(pdp_2d, aes(x = bedrooms, y = bathrooms)) +
+  geom_tile(aes(fill = yhat)) +
+  
+  # Add rug plots (top and right) using sampled_data
+  geom_point(data = sampled_data, aes(x = bedrooms, y = bathrooms), alpha = 0) +  # to keep scale
+  geom_rug(data = sampled_data, aes(x = bedrooms), sides = "t", alpha = 0.5, inherit.aes = FALSE) +
+  geom_rug(data = sampled_data, aes(y = bathrooms), sides = "r", alpha = 0.5, inherit.aes = FALSE) +
+  
+  # Color gradient for predicted price
+  scale_fill_gradient2(
+    name = "Predicted Price",
+    low = "#03142c",
+    mid = "#2a5387",
+    high = "#7eb7ff",
+    midpoint = mean(pdp_2d$yhat, na.rm = TRUE)
+  ) +
+  
+  labs(
+    x = "Bedrooms",
+    y = "Bathrooms",
+    title = "2D Partial Dependence Plot: Bedrooms vs Bathrooms"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 11)
+  )
+
+# Display the plot
+print(pdp_plot_rug)
+
+```
+
