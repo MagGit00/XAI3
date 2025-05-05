@@ -42,27 +42,37 @@ rf_model <- randomForest(cnt ~ . - temp - hum - windspeed - dteday, data = df, n
 ```
 
 ```{r}
+# Days since 2011
 pdp_days <- partial(rf_model, pred.var = "days_since_2011", train = df)
 autoplot(pdp_days) +
+  geom_rug(data = df, aes(x = days_since_2011), sides = "b", alpha = 0.3, inherit.aes = FALSE) +
   labs(title = "PDP: Effect of Days Since 2011", x = "Days since 2011", y = "Predicted Bike Count")
+
+
 ```
 ```{r}
+# Temperature
 pdp_temp <- partial(rf_model, pred.var = "temp_denorm", train = df)
 autoplot(pdp_temp) +
+  geom_rug(data = df, aes(x = temp_denorm), sides = "b", alpha = 0.3, inherit.aes = FALSE) +
   labs(title = "PDP: Effect of Temperature (°C)", x = "Temperature (°C)", y = "Predicted Bike Count")
 
 ```
 
 ```{r}
+# Humidity
 pdp_hum <- partial(rf_model, pred.var = "hum_denorm", train = df)
 autoplot(pdp_hum) +
+  geom_rug(data = df, aes(x = hum_denorm), sides = "b", alpha = 0.3, inherit.aes = FALSE) +
   labs(title = "PDP: Effect of Humidity (%)", x = "Humidity (%)", y = "Predicted Bike Count")
+
 ```
 
 ```{r}
-# Wind speed in km/h
+# Wind speed
 pdp_ws <- partial(rf_model, pred.var = "windspeed_denorm", train = df)
 autoplot(pdp_ws) +
+  geom_rug(data = df, aes(x = windspeed_denorm), sides = "b", alpha = 0.3, inherit.aes = FALSE) +
   labs(title = "PDP: Effect of Wind Speed (km/h)", x = "Wind Speed (km/h)", y = "Predicted Bike Count")
 ```
 
