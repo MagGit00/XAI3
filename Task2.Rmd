@@ -1,0 +1,15 @@
+---
+title: "Task2"
+authors: "Maurice Wegerif & Magnus Stavland Jakobsen"
+output: html_document
+date: "2025-05-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+```
+
