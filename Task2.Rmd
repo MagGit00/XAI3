@@ -4,12 +4,84 @@ authors: "Maurice Wegerif & Magnus Stavland Jakobsen"
 output: html_document
 date: "2025-05-05"
 ---
+```{r}
+#install.packages("ggExtra")
+#install.packages("viridis")
+```
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
+library(ggExtra)
+library(randomForest)
+library(pdp)
+library(ggplot2)
 ```
 
 ```{r}
 
+df = read.csv("./day.csv")
+
+set.seed(123)
+df_sample <- df[sample(nrow(df), 700), ]
+
+head(df)
+
+df_sample$temp_denorm <- df_sample$temp * (39 - (-8)) + (-8)           # t_min = -8, t_max = 39
+df_sample$hum_denorm <- df_sample$hum * 100                            # max hum = 100
+df_sample$windspeed_denorm <- df_sample$windspeed * 67       
+
+df_sample$days_since_2011 <- as.numeric(as.Date(df_sample$dteday) - as.Date("2011-01-01"))
 ```
 
+```{r}
+rf_sample_model <- randomForest(cnt ~ . - temp - hum - windspeed - dteday, data = df_sample)
+```
+
+```{r}
+# Generate partial dependence data
+pdp_2d <- partial(rf_sample_model,
+                  pred.var = c("temp_denorm", "hum_denorm"),
+                  train = df_sample,
+                  grid.resolution = 20, 
+                  progress = "text")
+```
+
+```{r}
+pdp_plot <- ggplot(pdp_2d, aes(x = temp_denorm, y = hum_denorm)) +
+  geom_tile(aes(fill = yhat)) +
+  geom_point(data = df_sample, aes(x = temp_denorm, y = hum_denorm), alpha = 0) +
+  scale_fill_gradient2(
+    name = "ŷ",
+    low = "#03142c",    
+    mid = "#2a5387",    
+    high = "#7eb7ff",   
+    midpoint = mean(pdp_2d$yhat)
+  ) +
+  labs(
+    x = "Temperature (°C)",
+    y = "Humidity (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 11)
+  )
+
+# Add marginal histograms styled like tick marks
+p_with_marginals <- ggMarginal(
+  pdp_plot,
+  type = "histogram",
+  margins = "both",
+  bins = 100,       # narrow bars for tick look
+  size = 2,         # thinner margins
+  fill = "black",
+  colour = "black"
+)
+
+print(p_with_marginals)
+```
