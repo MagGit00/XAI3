@@ -8,13 +8,61 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-
 ```{r}
+install.packages("randomForest")
+install.packages("pdp")
+install.packages("ggplot2")
 
 ```
 
 ```{r}
+library(randomForest)
+library(pdp)
+library(ggplot2)
+```
 
+```{r}
+df = read.csv("./day.csv")
+
+head(df)
+
+df$temp_denorm <- df$temp * (39 - (-8)) + (-8)           # t_min = -8, t_max = 39
+df$hum_denorm <- df$hum * 100                            # max hum = 100
+df$windspeed_denorm <- df$windspeed * 67       
+
+```
+
+```{r}
+# create column 
+df$days_since_2011 <- as.numeric(as.Date(df$dteday) - as.Date("2011-01-01"))
+
+#Fit the model
+set.seed(123)
+rf_model <- randomForest(cnt ~ . - temp - hum - windspeed - dteday, data = df, ntree = 500)
+```
+
+```{r}
+pdp_days <- partial(rf_model, pred.var = "days_since_2011", train = df)
+autoplot(pdp_days) +
+  labs(title = "PDP: Effect of Days Since 2011", x = "Days since 2011", y = "Predicted Bike Count")
+```
+```{r}
+pdp_temp <- partial(rf_model, pred.var = "temp_denorm", train = df)
+autoplot(pdp_temp) +
+  labs(title = "PDP: Effect of Temperature (°C)", x = "Temperature (°C)", y = "Predicted Bike Count")
+
+```
+
+```{r}
+pdp_hum <- partial(rf_model, pred.var = "hum_denorm", train = df)
+autoplot(pdp_hum) +
+  labs(title = "PDP: Effect of Humidity (%)", x = "Humidity (%)", y = "Predicted Bike Count")
+```
+
+```{r}
+# Wind speed in km/h
+pdp_ws <- partial(rf_model, pred.var = "windspeed_denorm", train = df)
+autoplot(pdp_ws) +
+  labs(title = "PDP: Effect of Wind Speed (km/h)", x = "Wind Speed (km/h)", y = "Predicted Bike Count")
 ```
 
